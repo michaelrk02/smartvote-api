@@ -1,0 +1,17 @@
+#!/bin/bash
+
+k=$1
+
+DB_URL="jdbc:mysql://localhost/voting_$k"
+DB_USERNAME="admin"
+DB_PASSWORD=""
+
+cd app/build/libs
+java \
+    $OPTIONS \
+    -Dserver.port=$(expr 8080 + $k) \
+    -Dagent.id=$k \
+    -Ddb.url="$DB_URL" \
+    -Ddb.username="$DB_USERNAME" \
+    -Ddb.password="$DB_PASSWORD" \
+    -jar app.jar
