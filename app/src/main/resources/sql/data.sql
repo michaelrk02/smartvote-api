@@ -1,3 +1,6 @@
+INSERT INTO `state` (`key`, `value`) VALUES
+('locked', 'false');
+
 INSERT INTO `token` (`id_hash`) VALUES
 ('bcb15f821479b4d5772bd0ca866c00ad5f926e3580720659cc80d39c9d09802a'),
 ('4cc8f4d609b717356701c57a03e737e5ac8fe885da8c7163d3de47e01849c635'),

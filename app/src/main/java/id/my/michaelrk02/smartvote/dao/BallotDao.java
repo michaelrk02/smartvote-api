@@ -1,7 +1,8 @@
 package id.my.michaelrk02.smartvote.dao;
 
+import id.my.michaelrk02.smartvote.exceptions.StateInvalidException;
 import id.my.michaelrk02.smartvote.model.Ballot;
-import id.my.michaelrk02.smartvote.util.Crypto;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
@@ -31,8 +32,7 @@ public class BallotDao {
                 .optional();
     }
     
-    public void insert(int token, int candidateId, int agentId, @Nullable String prevHash) {
-        String hash = Crypto.sha256(String.valueOf(token) + String.valueOf(candidateId) + String.valueOf(agentId) + prevHash);
+    public void insert(int token, int candidateId, int agentId, String hash, @Nullable String prevHash) {
         this.jdbc.sql("INSERT INTO `ballot` (`token`, `candidate_id`, `agent_id`, `hash`, `prev_hash`) VALUES (?, ?, ?, ?, ?)")
                 .param(token)
                 .param(candidateId)
@@ -40,5 +40,34 @@ public class BallotDao {
                 .param(hash)
                 .param(prevHash)
                 .update();
+    }
+    
+    public String getState() {
+        Optional<Ballot> lastBallot = this.findLast();
+        return lastBallot.isPresent() ? lastBallot.get().hash() : "NULL";
+    }
+    
+    public List<Ballot> getData() {
+        return this.jdbc.sql("SELECT * FROM `ballot`").query(Ballot.class).list();
+    }
+    
+    public List<Ballot> getData(String lastState) throws StateInvalidException {
+        if (lastState.equals("NULL")) {
+            return this.getData();
+        }
+        
+        Optional<Integer> lastId = this.jdbc.sql("SELECT `id` FROM `ballot` WHERE `hash` = ?").param(lastState).query(Integer.class).optional();
+        if (lastId.isEmpty()) {
+            throw new StateInvalidException(lastState);
+        }
+        
+        return this.jdbc.sql("SELECT * FROM `ballot` WHERE `id` > ?")
+                .param(lastId.get())
+                .query(Ballot.class).list();
+    }
+    
+    public void clear() {
+        this.jdbc.sql("DELETE FROM `ballot`").update();
+        this.jdbc.sql("ALTER TABLE `ballot` AUTO_INCREMENT = 1").update();
     }
 }

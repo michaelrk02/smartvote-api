@@ -1,6 +1,13 @@
 DROP TABLE IF EXISTS `ballot`;
 DROP TABLE IF EXISTS `candidate`;
 DROP TABLE IF EXISTS `token`;
+DROP TABLE IF EXISTS `state`;
+
+CREATE TABLE `state` (
+    `key` VARCHAR(128) NOT NULL PRIMARY KEY,
+
+    `value` TEXT NULL
+);
 
 CREATE TABLE `token` (
     `id_hash` CHAR(64) NOT NULL PRIMARY KEY

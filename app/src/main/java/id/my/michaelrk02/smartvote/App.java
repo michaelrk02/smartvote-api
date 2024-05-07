@@ -1,5 +1,6 @@
 package id.my.michaelrk02.smartvote;
 
+import id.my.michaelrk02.smartvote.services.ConfigurationService;
 import id.my.michaelrk02.smartvote.services.VotingAgentService;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -18,6 +19,7 @@ public class App {
     private Logger logger;
     
     private @Autowired DriverManagerDataSource dataSource;
+    private @Autowired ConfigurationService configuration;
     private @Autowired VotingAgentService votingAgent;
     
     @Bean
@@ -27,11 +29,7 @@ public class App {
             
             this.logger.info("Using database {}", this.dataSource.getUrl());
             
-            this.logger.info("Initializing voting agent ...");
-            int agentId = Integer.parseInt(System.getProperty("agent.id", "0"));
-            this.votingAgent.init(agentId);
-            
-            new Thread(new VotingAgentDispatcher(agentId, this.votingAgent)).start();
+            new Thread(new VotingAgentDispatcher(this.configuration.agentId, this.votingAgent)).start();
         };
     }
     
