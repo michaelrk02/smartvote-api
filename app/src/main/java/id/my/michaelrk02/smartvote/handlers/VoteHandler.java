@@ -47,21 +47,21 @@ public class VoteHandler implements MessageHandler {
             return;
         }
         
-        String remoteState = dataIn.readUTF();
+        String globalState = dataIn.readUTF();
         int token = dataIn.readInt();
         int candidateId = dataIn.readInt();
         int agentId = ctx.getSender();
         
-        this.logger.info("Got VOTE({}, {}, {})", remoteState, token, candidateId);
+        this.logger.info("Got VOTE({}, {}, {})", globalState, token, candidateId);
         
         String localState = this.ballotDao.getState();
-        if (!localState.equals(remoteState)) {
+        if (!localState.equals(globalState)) {
             dataOut.writeUTF("ERROR_STATE_INVALID");
-            dataOut.writeUTF(remoteState);
+            dataOut.writeUTF(globalState);
             return;
         }
 
-        if (!this.tokenDao.exists(token)) {
+        if (!this.configuration.agentTokenUnchecked && !this.tokenDao.exists(token)) {
             dataOut.writeUTF("ERROR_TOKEN_INVALID");
             dataOut.writeInt(token);
             return;

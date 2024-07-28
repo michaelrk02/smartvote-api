@@ -2,6 +2,7 @@ package id.my.michaelrk02.smartvote.dao;
 
 import id.my.michaelrk02.smartvote.exceptions.StateInvalidException;
 import id.my.michaelrk02.smartvote.model.Ballot;
+import id.my.michaelrk02.smartvote.util.Crypto;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -40,6 +41,19 @@ public class BallotDao {
                 .param(hash)
                 .param(prevHash)
                 .update();
+    }
+    
+    public String rehash(int id, String prevHash) {
+        Ballot ballot = this.jdbc.sql("SELECT * FROM `ballot` WHERE `id` = ?").param(id).query(Ballot.class).single();
+        String hash = Crypto.sha256(String.valueOf(ballot.token()) + String.valueOf(ballot.candidateId()) + String.valueOf(ballot.agentId()) + prevHash);
+        
+        this.jdbc.sql("UPDATE `ballot` SET `hash` = ?, `prev_hash` = ? WHERE `id` = ?")
+                .param(hash)
+                .param(prevHash)
+                .param(id)
+                .update();
+        
+        return hash;
     }
     
     public String getState() {

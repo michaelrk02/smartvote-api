@@ -3,13 +3,17 @@ package id.my.michaelrk02.smartvote.controllers;
 import id.my.michaelrk02.smartvote.dao.BallotDao;
 import id.my.michaelrk02.smartvote.dao.StateDao;
 import id.my.michaelrk02.smartvote.exceptions.StateUnlockedException;
+import id.my.michaelrk02.smartvote.model.Ballot;
 import id.my.michaelrk02.smartvote.model.request.LockRequest;
 import id.my.michaelrk02.smartvote.model.response.ErrorResponse;
+import id.my.michaelrk02.smartvote.model.response.IntegrityCheckResponse;
 import id.my.michaelrk02.smartvote.model.response.LockResponse;
 import id.my.michaelrk02.smartvote.model.response.SyncResponse;
 import id.my.michaelrk02.smartvote.services.BroadcastService;
 import id.my.michaelrk02.smartvote.services.SynchronizationService;
+import id.my.michaelrk02.smartvote.util.Crypto;
 import java.io.IOException;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,6 +66,48 @@ public class SystemController {
             return new ResponseEntity(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
         } catch (IOException ex) {
             return new ResponseEntity(new ErrorResponse(ex.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity(HttpStatus.OK);
+    }
+    
+    @GetMapping("/system/integrity/check")
+    public ResponseEntity<Object> checkIntegrity() {
+        List<Ballot> ballots = this.ballotDao.getData();
+        
+        String prevHash = null;
+        for (Ballot ballot : ballots) {
+            String expectedHash = ballot.hash();
+            String actualHash = Crypto.sha256(String.valueOf(ballot.token()) + String.valueOf(ballot.candidateId()) + String.valueOf(ballot.agentId()) + ballot.prevHash());
+            if (!actualHash.equals(expectedHash)) {
+                return new ResponseEntity(new IntegrityCheckResponse(false, "Ballot ID " + ballot.id() + " hash `" + expectedHash + "` differs than actual hash `" + actualHash + "`"), HttpStatus.OK);
+            }
+            
+            boolean linked = true;
+            if (ballot.prevHash() != null) {
+                if (!ballot.prevHash().equals(prevHash)) {
+                    linked = false;
+                }
+            } else {
+                if (prevHash != null) {
+                    linked = false;
+                }
+            }
+            if (!linked) {
+                return new ResponseEntity(new IntegrityCheckResponse(false, "Ballot ID " + ballot.id() + " previous hash `" + ballot.prevHash() + "` is not linked with previous ballot with hash `" + prevHash + "`"), HttpStatus.OK);
+            }
+            
+            prevHash = ballot.hash();
+        }
+        
+        return new ResponseEntity(new IntegrityCheckResponse(true, "System passes integrity check"), HttpStatus.OK);
+    }
+    
+    @PostMapping("/system/integrity/repair")
+    public ResponseEntity<Object> repairIntegrity() {
+        try {
+            this.synchronization.repair();
+        } catch (StateUnlockedException ex) {
+            return new ResponseEntity(new ErrorResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
         }
         return new ResponseEntity(HttpStatus.OK);
     }

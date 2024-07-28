@@ -8,11 +8,13 @@ public class ConfigurationService {
     public final boolean agentInit;
     public final boolean agentFaulty;
     public final boolean agentAutosync;
+    public final boolean agentTokenUnchecked;
     
     public ConfigurationService() {
         this.agentId = Integer.parseInt(System.getProperty("agent.id", "0"));
         this.agentInit = Boolean.parseBoolean(System.getProperty("agent.init", "true"));
         this.agentFaulty = Boolean.parseBoolean(System.getProperty("agent.faulty", "false"));
         this.agentAutosync = Boolean.parseBoolean(System.getProperty("agent.autosync", "true"));
+        this.agentTokenUnchecked = Boolean.parseBoolean(System.getProperty("agent.token.unchecked", "false"));
     }
 }

@@ -1,11 +1,14 @@
 package id.my.michaelrk02.smartvote.services;
 
 import id.my.michaelrk02.smartvote.dao.BallotDao;
+import id.my.michaelrk02.smartvote.dao.StateDao;
 import id.my.michaelrk02.smartvote.exceptions.StateInvalidException;
 import id.my.michaelrk02.smartvote.exceptions.StateUnlockedException;
+import id.my.michaelrk02.smartvote.model.Ballot;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class SynchronizationService {
     private @Autowired BroadcastService broadcast;
     private @Autowired BallotDao ballotDao;
+    private @Autowired StateDao stateDao;
     
     private final Logger logger;
     
@@ -22,8 +26,28 @@ public class SynchronizationService {
         this.logger = LoggerFactory.getLogger(SynchronizationService.class);
     }
     
+    public void repair() throws StateUnlockedException {
+        if (!this.stateDao.isLocked()) {
+            throw new StateUnlockedException();
+        }
+        
+        this.logger.info("Repairing voting agent state");
+        
+        List<Ballot> ballots = this.ballotDao.getData();
+        
+        String prevHash = null;
+        for (Ballot ballot : ballots) {
+            prevHash = this.ballotDao.rehash(ballot.id(), prevHash);
+        }
+        
+        this.logger.info("Voting agent state repaired");
+    }
+    
     public void sync() throws IOException, StateUnlockedException {
         this.logger.info("Synchronizing voting agent");
+        
+        // perform additional repair step first
+        this.repair();
         
         String lastState = this.ballotDao.getState();
         boolean refresh = false;
