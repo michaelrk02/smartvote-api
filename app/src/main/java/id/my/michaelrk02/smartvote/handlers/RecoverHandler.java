@@ -6,6 +6,7 @@ import id.my.michaelrk02.smartvote.dao.StateDao;
 import id.my.michaelrk02.smartvote.exceptions.StateInvalidException;
 import id.my.michaelrk02.smartvote.interfaces.MessageHandler;
 import id.my.michaelrk02.smartvote.model.Ballot;
+import id.my.michaelrk02.smartvote.services.recovery.RecoveryMethod;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -47,16 +48,22 @@ public class RecoverHandler implements MessageHandler {
         
         this.logger.debug("Got RECOVER({})", lastState);
         
+        RecoveryMethod recoveryMethod;
         List<Ballot> ballots;
         try {
+            recoveryMethod = RecoveryMethod.PARTIAL_RECOVERY;
             ballots = this.ballotDao.getData(lastState);
         } catch (StateInvalidException ex) {
-            dataOut.writeUTF("ERROR_STATE_INVALID");
-            dataOut.writeUTF(lastState);
-            return;
+            recoveryMethod = RecoveryMethod.FULL_RECOVERY;
+            ballots = this.ballotDao.getData();
         }
-
-        dataOut.writeUTF("SUCCESS");
+        
+        switch (recoveryMethod) {
+            case PARTIAL_RECOVERY -> dataOut.writeUTF("PARTIAL_RECOVERY");
+            case FULL_RECOVERY -> dataOut.writeUTF("FULL_RECOVERY");
+            default -> throw new RuntimeException();
+        }
+        
         dataOut.writeUTF(this.ballotDao.getState());
         dataOut.writeInt(ballots.size());
 

@@ -1,15 +1,16 @@
 #!/bin/bash
 
+source config.sh
+
 k=$1
 
-DB_URL="jdbc:mysql://localhost/voting_$k"
-DB_USERNAME="admin"
-DB_PASSWORD=""
+DB_URL="jdbc:mysql://localhost/${DB_PREFIX}_$k"
 
 cd app/build/libs
+ln -sf ../../config config
 java \
     $OPTIONS \
-    -Dserver.port=$(expr 8080 + $k) \
+    -Dserver.port=$(expr $APP_PORT + $k) \
     -Dagent.id=$k \
     -Ddb.url="$DB_URL" \
     -Ddb.username="$DB_USERNAME" \

@@ -7,6 +7,7 @@ import id.my.michaelrk02.smartvote.exceptions.StateLockedException;
 import id.my.michaelrk02.smartvote.exceptions.StateUnlockedException;
 import id.my.michaelrk02.smartvote.exceptions.TokenInvalidException;
 import id.my.michaelrk02.smartvote.exceptions.TokenUsedException;
+import id.my.michaelrk02.smartvote.services.recovery.RecoveryInformation;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -72,7 +73,7 @@ public class BroadcastService {
         }
     }
     
-    public byte[] recover(String lastState) throws IOException, StateUnlockedException, StateInvalidException {
+    public RecoveryInformation recover(String lastState) throws IOException, StateUnlockedException {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
         
@@ -86,16 +87,11 @@ public class BroadcastService {
         String statusCode = dataIn.readUTF();
         if (statusCode.equals("ERROR_STATE_UNLOCKED")) {
             throw new StateUnlockedException();
-        } else if (statusCode.equals("ERROR_STATE_INVALID")) {
-            lastState = dataIn.readUTF();
-            throw new StateInvalidException(lastState);
-        } else if (!statusCode.equals("SUCCESS")) {
+        } else if (!(statusCode.equals("PARTIAL_RECOVERY") || statusCode.equals("FULL_RECOVERY"))) {
             throw new RuntimeException();
         }
         
-        ByteArrayOutputStream stateOut = new ByteArrayOutputStream();
-        byteIn.transferTo(stateOut);
-        return stateOut.toByteArray();
+        return new RecoveryInformation(statusCode, byteIn);
     }
     
     public String getState() throws IOException {

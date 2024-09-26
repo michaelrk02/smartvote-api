@@ -2,9 +2,10 @@ package id.my.michaelrk02.smartvote.services;
 
 import id.my.michaelrk02.smartvote.dao.BallotDao;
 import id.my.michaelrk02.smartvote.dao.StateDao;
-import id.my.michaelrk02.smartvote.exceptions.StateInvalidException;
 import id.my.michaelrk02.smartvote.exceptions.StateUnlockedException;
 import id.my.michaelrk02.smartvote.model.Ballot;
+import id.my.michaelrk02.smartvote.services.recovery.RecoveryInformation;
+import id.my.michaelrk02.smartvote.services.recovery.RecoveryMethod;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -50,29 +51,20 @@ public class SynchronizationService {
         this.repair();
         
         String lastState = this.ballotDao.getState();
-        boolean refresh = false;
+        
+        RecoveryInformation recovery = this.broadcast.recover(lastState);
 
-        byte[] state = null;
-        try {
-            state = this.broadcast.recover(lastState);
-        } catch (StateInvalidException ex) {
-            this.logger.info("Latest state is diverging or incompatible with incremental recovery. Starting full recovery instead");
-            try {
-                state = this.broadcast.recover("NULL");
-                refresh = true;
-            } catch (StateInvalidException _ex) {
-                throw new RuntimeException();
-            }
-        }
-
-        ByteArrayInputStream byteIn = new ByteArrayInputStream(state);
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(recovery.getData());
         DataInputStream dataIn = new DataInputStream(byteIn);
 
-        String stateHash = dataIn.readUTF();         
+        String stateHash = dataIn.readUTF();    
         if (!stateHash.equals(lastState)) {
             this.logger.info("Got new state `{}` to replace old state `{}`", stateHash, lastState);
 
-            if (refresh) {
+            if (recovery.getMethod() == RecoveryMethod.PARTIAL_RECOVERY) {
+                this.logger.info("Attempting partial recovery ...");
+            } else if (recovery.getMethod() == RecoveryMethod.FULL_RECOVERY) {
+                this.logger.info("Attempting full recovery ...");
                 this.ballotDao.clear();
             }
 
