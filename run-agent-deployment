@@ -1,0 +1,16 @@
+#!/bin/bash
+
+source deployment.sh
+
+DB_URL="jdbc:mysql://$DB_HOST/$DB_NAME"
+
+cd app/build/libs
+ln -sf ../../config config
+java \
+    $OPTIONS \
+    -Dserver.port=$(expr $APP_PORT) \
+    -Dagent.id=$APP_ID \
+    -Ddb.url="$DB_URL" \
+    -Ddb.username="$DB_USERNAME" \
+    -Ddb.password="$DB_PASSWORD" \
+    -jar app.jar

@@ -1,5 +1,6 @@
 app/config/currentView
 config.sh
+deployment.sh
 
 # Ignore Gradle project-specific cache directory
 .gradle

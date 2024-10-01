@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export APP_PORT=8080
+export APP_ID=0
+
+export DB_HOST="localhost"
+export DB_NAME="smartvote"
+export DB_USERNAME="admin"
+export DB_PASSWORD=""
