@@ -44,14 +44,24 @@ public class VotingAgentService extends DefaultSingleRecoverable {
         this.messageHandlers = new HashMap<>();
         this.logger.info("Initializing agent");
         
-        if (configuration.agentInit) {
+        if (configuration.agentInit) {            
             this.logger.info("Initializing SQL database state");
-            try {
-                Connection conn = dataSource.getConnection();
-                ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/schema.sql"));
-                ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/data.sql"));
-            } catch (SQLException ex) {
-                this.logger.error("Unable to connect to database");
+            while (true) {
+                try {
+                    Connection conn = dataSource.getConnection();
+                    ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/schema.sql"));
+                    ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/data.sql"));
+                    this.logger.info("Database initialized");
+                    break;
+                } catch (SQLException ex) {
+                    this.logger.error("Unable to connect to database, retrying ...");
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException _ex) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
         } else {
             this.logger.info("Using existing SQL database state");
