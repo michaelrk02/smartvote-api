@@ -16,11 +16,13 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.stereotype.Service;
@@ -44,27 +46,20 @@ public class VotingAgentService extends DefaultSingleRecoverable {
         this.messageHandlers = new HashMap<>();
         this.logger.info("Initializing agent");
         
-        if (configuration.agentInit) {            
-            this.logger.info("Initializing SQL database state");
-            while (true) {
+        this.logger.info("Initializing SQL database state");
+        while (true) {
+            try {
+                this.initializeDatabase(dataSource, configuration);
+                break;
+            } catch (SQLException ex) {
+                this.logger.error("Unable to connect to database, retrying ...");
                 try {
-                    Connection conn = dataSource.getConnection();
-                    ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/schema.sql"));
-                    ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/data.sql"));
-                    this.logger.info("Database initialized");
+                    Thread.sleep(5000);
+                } catch (InterruptedException _ex) {
+                    Thread.currentThread().interrupt();
                     break;
-                } catch (SQLException ex) {
-                    this.logger.error("Unable to connect to database, retrying ...");
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException _ex) {
-                        Thread.currentThread().interrupt();
-                        break;
-                    }
                 }
             }
-        } else {
-            this.logger.info("Using existing SQL database state");
         }
         
         this.messageHandlers.put("VOTE", voteHandler);
@@ -145,5 +140,31 @@ public class VotingAgentService extends DefaultSingleRecoverable {
         }
         
         return byteOut.toByteArray();
+    }
+    
+    private void initializeDatabase(
+            DriverManagerDataSource dataSource,
+            ConfigurationService configuration
+    ) throws SQLException {
+        JdbcClient jdbc = JdbcClient.create(dataSource);
+        boolean fresh = false;
+        
+        if (configuration.agentRefresh) {
+            fresh = true;
+        } else {
+            List<Map<String, Object>> rows = jdbc.sql("SHOW TABLES").query().listOfRows();
+            if (rows.isEmpty()) {
+                fresh = true;
+            }
+        }
+        
+        if (fresh) {
+            Connection conn = dataSource.getConnection();
+            ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/schema.sql"));
+            ScriptUtils.executeSqlScript(conn, new ClassPathResource("sql/data.sql"));
+            this.logger.info("Using fresh database state");
+        } else {
+            this.logger.info("Using previous database state");
+        }
     }
 }

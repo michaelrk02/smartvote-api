@@ -5,14 +5,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class ConfigurationService {
     public final int agentId;
-    public final boolean agentInit;
+    public final boolean agentRefresh;
     public final boolean agentFaulty;
     public final boolean agentAutosync;
     public final boolean agentTokenUnchecked;
     
     public ConfigurationService() {
         this.agentId = Integer.parseInt(System.getProperty("agent.id", "0"));
-        this.agentInit = Boolean.parseBoolean(System.getProperty("agent.init", "true"));
+        this.agentRefresh = Boolean.parseBoolean(System.getProperty("agent.refresh", "false"));
         this.agentFaulty = Boolean.parseBoolean(System.getProperty("agent.faulty", "false"));
         this.agentAutosync = Boolean.parseBoolean(System.getProperty("agent.autosync", "true"));
         this.agentTokenUnchecked = Boolean.parseBoolean(System.getProperty("agent.token.unchecked", "false"));

@@ -1,0 +1,2 @@
+#!/bin/bash
+OPTIONS="-Dagent.refresh=true $OPTIONS" ./run-agent $1
