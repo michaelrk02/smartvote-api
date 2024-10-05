@@ -73,10 +73,10 @@ public class VoteHandler implements MessageHandler {
             return;
         }
 
-        String prevHash = null;
+        Optional<String> prevHash = Optional.empty();
         Optional<Ballot> lastBallot = this.ballotDao.findLast();
         if (lastBallot.isPresent()) {
-            prevHash = lastBallot.get().hash();
+            prevHash = Optional.of(lastBallot.get().hash());
         }
         
         if (this.configuration.agentFaulty) {
@@ -88,8 +88,8 @@ public class VoteHandler implements MessageHandler {
             }
         }
 
-        String hash = Crypto.sha256(String.valueOf(token) + String.valueOf(candidateId) + String.valueOf(agentId) + prevHash);
-        this.ballotDao.insert(token, candidateId, agentId, hash, prevHash);
+        String hash = Crypto.sha256(String.valueOf(token) + String.valueOf(candidateId) + String.valueOf(agentId) + prevHash.orElse(""));
+        this.ballotDao.insert(token, candidateId, agentId, hash, prevHash.orElse(null));
 
         dataOut.writeUTF("SUCCESS");
     }
