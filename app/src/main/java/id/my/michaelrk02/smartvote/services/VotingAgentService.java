@@ -67,8 +67,8 @@ public class VotingAgentService extends DefaultSingleRecoverable {
         this.messageHandlers.put("RECOVER", recoverHandler);
         this.messageHandlers.put("GET_STATE", getStateHandler);
         
-        if (configuration.agentFaulty) {
-            this.logger.warn("Agent of ID {} is malicious", configuration.agentId);
+        if (!configuration.agentFaulty.equals("")) {
+            this.logger.warn("Agent of ID {} is a malicious {}", configuration.agentId, configuration.agentFaulty);
         }
 
         this.logger.info("Agent of ID {} initialized", configuration.agentId);

@@ -79,13 +79,10 @@ public class VoteHandler implements MessageHandler {
             prevHash = Optional.of(lastBallot.get().hash());
         }
         
-        if (this.configuration.agentFaulty) {
-            // forge ballot for every multiple of 3
-            if (lastBallot.isPresent() && ((lastBallot.get().id() + 1) % 3 == 0)) {
-                // malicious ballot
-                candidateId = 1;
-                this.logger.warn("Malicious ballot casted");
-            }
+        if (this.configuration.agentFaulty.equals("receiver")) {
+            // malicious ballot
+            candidateId = 1;
+            this.logger.warn("Malicious ballot casted");
         }
 
         String hash = Crypto.sha256(String.valueOf(token) + String.valueOf(candidateId) + String.valueOf(agentId) + prevHash.orElse(""));

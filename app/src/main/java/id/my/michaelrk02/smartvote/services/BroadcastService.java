@@ -13,20 +13,31 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class BroadcastService {
     private @Autowired BallotDao ballotDao;
+    private @Autowired ConfigurationService configuration;
     
+    private final Logger logger;
     private final ServiceProxy proxy;
     
     public BroadcastService(ConfigurationService configuration) {
+        this.logger = LoggerFactory.getLogger(BroadcastService.class);
         this.proxy = new ServiceProxy(configuration.agentId);
     }
     
     public void vote(int token, int candidateId) throws IOException, TokenInvalidException, TokenUsedException, StateLockedException, StateInvalidException {
+        if (this.configuration.agentFaulty.equals("broadcaster")) {
+            // malicious ballot
+            candidateId = 1;
+            this.logger.warn("Malicious ballot casted");
+        }
+        
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
         DataOutputStream dataOut = new DataOutputStream(byteOut);
         
