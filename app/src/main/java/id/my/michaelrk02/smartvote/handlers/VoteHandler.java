@@ -52,7 +52,14 @@ public class VoteHandler implements MessageHandler {
         int candidateId = dataIn.readInt();
         int agentId = ctx.getSender();
         
-        this.logger.info("Got VOTE({}, {}, {})", globalState, token, candidateId);
+        this.logger.info(
+            "Got VOTE({}, {}, {}) leader={} consensus={}",
+            globalState,
+            token,
+            candidateId,
+            ctx.getLeader(),
+            ctx.getConsensusId()
+        );
         
         String localState = this.ballotDao.getState();
         if (!localState.equals(globalState)) {
@@ -79,7 +86,7 @@ public class VoteHandler implements MessageHandler {
             prevHash = Optional.of(lastBallot.get().hash());
         }
         
-        if (this.configuration.agentFaulty.equals("receiver")) {
+        if (this.configuration.getFaulty().equals("receiver")) {
             // malicious ballot
             candidateId = 1;
             this.logger.warn("Malicious ballot casted");

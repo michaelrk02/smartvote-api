@@ -32,7 +32,7 @@ public class BroadcastService {
     }
     
     public void vote(int token, int candidateId) throws IOException, TokenInvalidException, TokenUsedException, StateLockedException, StateInvalidException {
-        if (this.configuration.agentFaulty.equals("broadcaster")) {
+        if (this.configuration.getFaulty().equals("broadcaster")) {
             // malicious ballot
             candidateId = 1;
             this.logger.warn("Malicious ballot casted");

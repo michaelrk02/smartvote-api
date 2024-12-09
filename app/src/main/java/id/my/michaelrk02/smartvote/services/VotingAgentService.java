@@ -67,8 +67,8 @@ public class VotingAgentService extends DefaultSingleRecoverable {
         this.messageHandlers.put("RECOVER", recoverHandler);
         this.messageHandlers.put("GET_STATE", getStateHandler);
         
-        if (!configuration.agentFaulty.equals("")) {
-            this.logger.warn("Agent of ID {} is a malicious {}", configuration.agentId, configuration.agentFaulty);
+        if (!configuration.getFaulty().equals("")) {
+            this.logger.warn("Agent of ID {} is a malicious {}", configuration.agentId, configuration.agentFaultyMode);
         }
 
         this.logger.info("Agent of ID {} initialized", configuration.agentId);
@@ -127,8 +127,12 @@ public class VotingAgentService extends DefaultSingleRecoverable {
             MessageHandler handler = this.messageHandlers.get(messageCode);
             if (handler != null) {
                 handler.execute(ctx, dataIn, dataOut);
+
+                ByteArrayInputStream respBytes = new ByteArrayInputStream(byteOut.toByteArray());
+                DataInputStream respData = new DataInputStream(respBytes);
+                String responseCode = respData.readUTF();
                 
-                this.logger.info("Message {} ({} bytes) executed successfully. Sent {} bytes to the response", messageCode, message.length, byteOut.size());
+                this.logger.info("Message {} ({} bytes) executed successfully. Sent {} ({} bytes) to the response", messageCode, message.length, responseCode, byteOut.size());
             } else {
                 dataOut.writeUTF("ERROR_MESSAGE_INVALID");
                 dataOut.writeUTF(messageCode);

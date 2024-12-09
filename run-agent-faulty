@@ -1,0 +1,2 @@
+#!/bin/bash
+OPTIONS="${OPTIONS} -Dagent.faulty.id=2 -Dagent.faulty.mode=receiver -Dagent.autosync=false" ./run-agent-fresh $1
